@@ -6,8 +6,16 @@
     "description": "Downloads the IMDb ratings flat file daily and updates CommunityRating on all library items with an IMDb ID, without touching any other metadata.",
     "owner": "voc0der",
     "overview": "Scheduled task that keeps Jellyfin community ratings in sync with IMDb",
-    "imageUrl": "https://raw.githubusercontent.com/voc0der/jellyfin-imdb-rating-updater/main/icon.png",
+    "imageUrl": "https://raw.githubusercontent.com/pozniakas/jellyfin-imdb-rating-updater/main/icon.png",
     "versions": [
+      {
+        "version": "1.0.0.21",
+        "changelog": "## What's Changed\n\n- Update manifest.json for version 1.0.0.20 (38777c0)\n- test: tighten .NET 9 and midpoint coverage (7dae738)\n- chore(deps): Bump actions/setup-dotnet from 5 to 6 (40f1eff)\n- chore(deps): Bump actions/checkout from 6 to 7 (6619bf1)\n- fix: use Episode.SeasonId, retarget tests to net9.0, add CI test step (7b78f8d)\n- Extract SeasonRatingCalculator and add tests (77fb535)\n- fix: address PR review feedback for season ratings (d38c60b)\n- feat: add season ratings calculated from episode averages (ef284ce)\n\n**Full Changelog**: https://github.com/pozniakas/jellyfin-imdb-rating-updater/compare/1.0.0.20...1.0.0.21\n",
+        "targetAbi": "10.11.6.0",
+        "sourceUrl": "https://github.com/pozniakas/jellyfin-imdb-rating-updater/releases/download/1.0.0.21/IMDb_Ratings_1.0.0.21.zip",
+        "checksum": "6b6d6ec56b4fd7bf8353f22c67d75b27",
+        "timestamp": "2026-08-01T19:21:17Z"
+      },
       {
         "version": "1.0.0.20",
         "changelog": "## What's Changed\n\n- test: tighten .NET 9 and midpoint coverage (7dae738)\n- chore(deps): Bump actions/setup-dotnet from 5 to 6 (40f1eff)\n- chore(deps): Bump actions/checkout from 6 to 7 (6619bf1)\n- fix: use Episode.SeasonId, retarget tests to net9.0, add CI test step (7b78f8d)\n- Extract SeasonRatingCalculator and add tests (77fb535)\n- fix: address PR review feedback for season ratings (d38c60b)\n- feat: add season ratings calculated from episode averages (ef284ce)\n- docs: remove star history section [skip ci] (8da625a)\n- chore: add icon to repo. [skip ci] (0dd3e96)\n\n**Full Changelog**: https://github.com/voc0der/jellyfin-imdb-rating-updater/compare/1.0.0.19...1.0.0.20\n",
