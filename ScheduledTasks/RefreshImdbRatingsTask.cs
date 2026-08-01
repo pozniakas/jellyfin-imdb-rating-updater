@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Jellyfin.Data.Enums;
@@ -19,23 +17,17 @@ namespace Jellyfin.Plugin.ImdbRatings.ScheduledTasks;
 public class RefreshImdbRatingsTask : IScheduledTask
 {
     private readonly ILibraryManager _libraryManager;
-    private readonly IHttpClientFactory _httpClientFactory;
+    private readonly ImdbRatingsCacheService _cacheService;
     private readonly ILogger<RefreshImdbRatingsTask> _logger;
-    private readonly ILoggerFactory _loggerFactory;
-    private readonly string _dataPath;
 
     public RefreshImdbRatingsTask(
         ILibraryManager libraryManager,
-        IHttpClientFactory httpClientFactory,
-        ILogger<RefreshImdbRatingsTask> logger,
-        ILoggerFactory loggerFactory,
-        MediaBrowser.Common.Configuration.IApplicationPaths applicationPaths)
+        ImdbRatingsCacheService cacheService,
+        ILogger<RefreshImdbRatingsTask> logger)
     {
         _libraryManager = libraryManager;
-        _httpClientFactory = httpClientFactory;
+        _cacheService = cacheService;
         _logger = logger;
-        _loggerFactory = loggerFactory;
-        _dataPath = applicationPaths.DataPath;
     }
 
     public string Name => "Refresh IMDb Ratings";
@@ -99,19 +91,8 @@ public class RefreshImdbRatingsTask : IScheduledTask
 
         progress.Report(5);
 
-        // Step 2: Download/cache the ratings file, Step 3: Parse ratings (filtered to library IMDb IDs)
-        var downloader = new ImdbFlatFileDownloader(
-            _httpClientFactory,
-            _loggerFactory.CreateLogger<ImdbFlatFileDownloader>(),
-            _dataPath);
-        var parser = new ImdbRatingsParser(_loggerFactory.CreateLogger<ImdbRatingsParser>());
-
-        var ratings = await DownloadAndParseWithRetryAsync(
-            downloader,
-            parser,
-            libraryImdbIds,
-            progress,
-            cancellationToken).ConfigureAwait(false);
+        // Step 2: Download/cache the ratings file and parse ratings
+        var ratings = await _cacheService.GetRatingsAsync(cancellationToken).ConfigureAwait(false);
         progress.Report(30);
         int lastScanProgressBucket = 30;
 
@@ -339,96 +320,6 @@ public class RefreshImdbRatingsTask : IScheduledTask
             skippedBelowMinimumVotes,
             skippedMissingImdbId,
             notFound);
-    }
-
-    private async Task<Dictionary<string, (float Rating, int Votes)>> DownloadAndParseWithRetryAsync(
-        ImdbFlatFileDownloader downloader,
-        ImdbRatingsParser parser,
-        IReadOnlySet<string> includeImdbIds,
-        IProgress<double> progress,
-        CancellationToken cancellationToken)
-    {
-        try
-        {
-            var filePath = await GetRatingsFilePathWithTransientRetryAsync(downloader, cancellationToken).ConfigureAwait(false);
-            progress.Report(10);
-            return await parser.ParseFilteredAsync(filePath, includeImdbIds, cancellationToken).ConfigureAwait(false);
-        }
-        catch (InvalidDataException ex)
-        {
-            // Bad data on disk — invalidate cache and re-download.
-            _logger.LogWarning(ex,
-                "IMDb ratings data failed validation on first attempt; invalidating cache and retrying");
-
-            downloader.InvalidateCache();
-            return await RetryDownloadAndParseAsync(
-                downloader,
-                parser,
-                includeImdbIds,
-                progress,
-                cancellationToken).ConfigureAwait(false);
-        }
-    }
-
-    private async Task<Dictionary<string, (float Rating, int Votes)>> RetryDownloadAndParseAsync(
-        ImdbFlatFileDownloader downloader,
-        ImdbRatingsParser parser,
-        IReadOnlySet<string> includeImdbIds,
-        IProgress<double> progress,
-        CancellationToken cancellationToken)
-    {
-        try
-        {
-            var filePath = await downloader.GetRatingsFilePathAsync(cancellationToken).ConfigureAwait(false);
-            progress.Report(10);
-            return await parser.ParseFilteredAsync(filePath, includeImdbIds, cancellationToken).ConfigureAwait(false);
-        }
-        catch (InvalidDataException retryEx)
-        {
-            _logger.LogError(retryEx, "IMDb ratings data failed validation after retry");
-            throw;
-        }
-    }
-
-    private async Task<string> GetRatingsFilePathWithTransientRetryAsync(
-        ImdbFlatFileDownloader downloader,
-        CancellationToken cancellationToken)
-    {
-        try
-        {
-            return await downloader.GetRatingsFilePathAsync(cancellationToken).ConfigureAwait(false);
-        }
-        catch (Exception ex) when (IsTransientNetworkError(ex))
-        {
-            // Transient download error — try once more after a short delay, or fall back to stale cache.
-            _logger.LogWarning(ex, "Transient network error downloading IMDb ratings; retrying once after delay");
-
-            await Task.Delay(TimeSpan.FromSeconds(3), cancellationToken).ConfigureAwait(false);
-
-            try
-            {
-                return await downloader.GetRatingsFilePathAsync(cancellationToken).ConfigureAwait(false);
-            }
-            catch (Exception retryEx) when (IsTransientNetworkError(retryEx))
-            {
-                if (!downloader.HasCacheFile)
-                {
-                    _logger.LogError(retryEx, "Download failed after retry and no cached ratings file exists");
-                    throw;
-                }
-
-                _logger.LogWarning(retryEx,
-                    "Download failed after retry; falling back to stale cache at {Path}", downloader.CachePath);
-
-                return downloader.CachePath;
-            }
-        }
-    }
-
-    private static bool IsTransientNetworkError(Exception ex)
-    {
-        return ex is HttpRequestException
-            || (ex is IOException && ex is not InvalidDataException);
     }
 
     private IReadOnlyList<BaseItem> GetLibraryItems(PluginConfiguration config)
