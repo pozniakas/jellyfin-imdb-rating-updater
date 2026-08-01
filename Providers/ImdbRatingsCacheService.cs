@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Net.Http;
 using System.Threading;
@@ -12,7 +13,7 @@ namespace Jellyfin.Plugin.ImdbRatings.Providers;
 public class ImdbRatingsCacheService
 {
     private static readonly SemaphoreSlim _cacheLock = new(1, 1);
-    private static Dictionary<string, (float Rating, int Votes)>? _ratingsCache;
+    private static IReadOnlyDictionary<string, (float Rating, int Votes)>? _ratingsCache;
     private static DateTime _cacheLoadedAt;
     private static readonly TimeSpan CacheLifetime = TimeSpan.FromHours(23);
 
@@ -60,7 +61,8 @@ public class ImdbRatingsCacheService
 
             var parser = new ImdbRatingsParser(_loggerFactory.CreateLogger<ImdbRatingsParser>());
 
-            _ratingsCache = await DownloadAndParseAsync(downloader, parser, cancellationToken).ConfigureAwait(false);
+            var parsed = await DownloadAndParseAsync(downloader, parser, cancellationToken).ConfigureAwait(false);
+            _ratingsCache = new ReadOnlyDictionary<string, (float Rating, int Votes)>(parsed);
             _cacheLoadedAt = DateTime.UtcNow;
 
             _logger.LogInformation("Cached {Count} IMDb ratings", _ratingsCache.Count);

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,9 +17,12 @@ namespace Jellyfin.Plugin.ImdbRatings.EntryPoints;
 
 public class SeasonRatingEntryPoint : IHostedService
 {
+    private static readonly TimeSpan DebounceDelay = TimeSpan.FromSeconds(2);
+
     private readonly ILibraryManager _libraryManager;
     private readonly ImdbRatingsCacheService _cacheService;
     private readonly ILogger<SeasonRatingEntryPoint> _logger;
+    private readonly ConcurrentDictionary<Guid, byte> _pendingSeasons = new();
     private CancellationTokenSource? _cts;
 
     public SeasonRatingEntryPoint(
@@ -68,7 +72,29 @@ public class SeasonRatingEntryPoint : IHostedService
         }
 
         var token = _cts?.Token ?? CancellationToken.None;
-        _ = Task.Run(() => RecalculateSeasonAsync(episode.SeasonId, config.MinimumVotes, token), token);
+        if (!_pendingSeasons.TryAdd(episode.SeasonId, 0))
+        {
+            return;
+        }
+
+        var seasonId = episode.SeasonId;
+        var minimumVotes = config.MinimumVotes;
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await Task.Delay(DebounceDelay, token).ConfigureAwait(false);
+                await RecalculateSeasonAsync(seasonId, minimumVotes, token).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                // Shutdown requested — expected.
+            }
+            finally
+            {
+                _pendingSeasons.TryRemove(seasonId, out _);
+            }
+        }, token);
     }
 
     private async Task RecalculateSeasonAsync(Guid seasonId, int minimumVotes, CancellationToken cancellationToken)
@@ -115,6 +141,10 @@ public class SeasonRatingEntryPoint : IHostedService
             await _libraryManager.UpdateItemAsync(season, parent, ItemUpdateType.MetadataEdit, cancellationToken).ConfigureAwait(false);
 
             _logger.LogDebug("Updated season \"{Name}\" rating to {Rating}", season.Name, avgRating);
+        }
+        catch (OperationCanceledException)
+        {
+            // Shutdown requested — expected.
         }
         catch (Exception ex)
         {
