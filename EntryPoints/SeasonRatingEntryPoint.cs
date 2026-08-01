@@ -19,6 +19,7 @@ public class SeasonRatingEntryPoint : IHostedService
     private readonly ILibraryManager _libraryManager;
     private readonly ImdbRatingsCacheService _cacheService;
     private readonly ILogger<SeasonRatingEntryPoint> _logger;
+    private CancellationTokenSource? _cts;
 
     public SeasonRatingEntryPoint(
         ILibraryManager libraryManager,
@@ -32,6 +33,7 @@ public class SeasonRatingEntryPoint : IHostedService
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
+        _cts = new CancellationTokenSource();
         _libraryManager.ItemUpdated += OnItemUpdated;
         return Task.CompletedTask;
     }
@@ -39,6 +41,9 @@ public class SeasonRatingEntryPoint : IHostedService
     public Task StopAsync(CancellationToken cancellationToken)
     {
         _libraryManager.ItemUpdated -= OnItemUpdated;
+        _cts?.Cancel();
+        _cts?.Dispose();
+        _cts = null;
         return Task.CompletedTask;
     }
 
@@ -62,10 +67,11 @@ public class SeasonRatingEntryPoint : IHostedService
             return;
         }
 
-        _ = Task.Run(() => RecalculateSeasonAsync(episode.SeasonId, config.MinimumVotes));
+        var token = _cts?.Token ?? CancellationToken.None;
+        _ = Task.Run(() => RecalculateSeasonAsync(episode.SeasonId, config.MinimumVotes, token), token);
     }
 
-    private async Task RecalculateSeasonAsync(Guid seasonId, int minimumVotes)
+    private async Task RecalculateSeasonAsync(Guid seasonId, int minimumVotes, CancellationToken cancellationToken)
     {
         try
         {
@@ -106,7 +112,7 @@ public class SeasonRatingEntryPoint : IHostedService
 
             season.CommunityRating = avgRating;
             var parent = season.GetParent();
-            await _libraryManager.UpdateItemAsync(season, parent, ItemUpdateType.MetadataEdit, CancellationToken.None).ConfigureAwait(false);
+            await _libraryManager.UpdateItemAsync(season, parent, ItemUpdateType.MetadataEdit, cancellationToken).ConfigureAwait(false);
 
             _logger.LogDebug("Updated season \"{Name}\" rating to {Rating}", season.Name, avgRating);
         }
