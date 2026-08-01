@@ -39,7 +39,7 @@ A Jellyfin plugin that downloads the [IMDb ratings flat file](https://datasets.i
 - Batch processing tuned to finish in well under a minute even for massive libraries
 - Configurable minimum votes threshold (default: 1)
 - Choose which library types to update (Movies, TV Series, or both)
-- Season ratings (opt-in) calculated as the average of eligible IMDb episode ratings in your library. Also, auto-updated as new episodes are added
+- Season ratings (opt-in) calculated as the average of eligible IMDb episode ratings in your library. Also auto-updated as new episodes are added.
 - Progress reporting in the Jellyfin task UI
 
 ## Installation
