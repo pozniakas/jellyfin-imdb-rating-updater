@@ -8,6 +8,7 @@
          data-require="emby-input,emby-button,emby-checkbox">
         <div data-role="content">
             <div class="content-primary">
+                <h1>IMDb Ratings</h1>
                 <form id="ImdbRatingsConfigForm" onsubmit="return window.ImdbRatingsConfigSubmit(event, this);">
                     <div class="verticalSection">
                         <h2 class="sectionTitle">Filtering</h2>
@@ -16,7 +17,8 @@
                             <input id="txtMinimumVotes" type="number" min="1" max="1000000"
                                    pattern="[0-9]*" required class="emby-input" />
                             <div class="fieldDescription">
-                                Skip items where IMDb has fewer votes than this value (default: 1).
+                                Skip updating items where IMDb has fewer votes than this value. Default: 1.
+                                Lower values can increase task duration because more items qualify for updates.
                             </div>
                         </div>
                     </div>
@@ -72,9 +74,9 @@
                                 <span>Calculate Season Ratings</span>
                             </label>
                             <div class="fieldDescription checkboxFieldDescription">
-                                Set each season's rating to the average of its episode ratings from IMDb.
-                                Episodes without IMDb data or below the votes threshold are excluded.
-                                Requires "Include TV Series".
+                                When enabled, each season's Community Rating is set to the average of eligible
+                                IMDb episode ratings in your library. Episodes without an IMDb rating or below
+                                the minimum votes threshold are excluded. Only has effect when "Include TV Series" is turned on.
                             </div>
                         </div>
                         <div class="checkboxContainer checkboxContainer-withDescription">
@@ -83,8 +85,8 @@
                                 <span>Enable Item Debug Logs</span>
                             </label>
                             <div class="fieldDescription checkboxFieldDescription">
-                                Writes sampled per-item debug logs for troubleshooting missing IMDb rows and
-                                minimum-vote skips. Can increase log volume and task duration.
+                                Off by default. When enabled, writes sampled per-item debug logs for troubleshooting
+                                missing IMDb rows and minimum-vote skips (can increase log volume and task duration).
                             </div>
                         </div>
                     </div>
