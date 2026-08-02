@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Plugin.ImdbRatings.Providers;
 
-public class ImdbFlatFileDownloader
+public class ImdbFlatFileDownloader : IImdbRatingsFileProvider
 {
     private const string ImdbRatingsUrl = "https://datasets.imdbws.com/title.ratings.tsv.gz";
     private const long MaxDecompressedSize = 100 * 1024 * 1024; // 100 MB

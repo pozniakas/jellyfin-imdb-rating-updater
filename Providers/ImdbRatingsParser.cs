@@ -14,16 +14,23 @@ namespace Jellyfin.Plugin.ImdbRatings.Providers;
 public class ImdbRatingsParser
 {
     private const string ExpectedHeader = "tconst\taverageRating\tnumVotes";
-    private const int MinExpectedRows = 500_000;
     private const double MaxParseErrorRatio = 0.01;
     private const int ReadBufferSize = 128 * 1024;
     private static readonly byte[] ExpectedHeaderBytes = Encoding.ASCII.GetBytes(ExpectedHeader);
 
     private readonly ILogger<ImdbRatingsParser> _logger;
+    private readonly int _minExpectedRows;
 
     public ImdbRatingsParser(ILogger<ImdbRatingsParser> logger)
+        : this(logger, 500_000)
     {
+    }
+
+    internal ImdbRatingsParser(ILogger<ImdbRatingsParser> logger, int minExpectedRows)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(minExpectedRows);
         _logger = logger;
+        _minExpectedRows = minExpectedRows;
     }
 
     /// <summary>
@@ -168,10 +175,10 @@ public class ImdbRatingsParser
             throw new InvalidDataException("IMDb ratings file contains header but no valid data rows.");
         }
 
-        if (validRows < MinExpectedRows)
+        if (validRows < _minExpectedRows)
         {
             throw new InvalidDataException(
-                $"IMDb ratings file appears truncated: only {validRows} valid rows (expected at least {MinExpectedRows}).");
+                $"IMDb ratings file appears truncated: only {validRows} valid rows (expected at least {_minExpectedRows}).");
         }
 
         if (lineCount > 0 && (double)parseErrors / lineCount > MaxParseErrorRatio)

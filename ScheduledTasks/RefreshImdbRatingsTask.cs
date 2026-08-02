@@ -19,23 +19,20 @@ namespace Jellyfin.Plugin.ImdbRatings.ScheduledTasks;
 public class RefreshImdbRatingsTask : IScheduledTask
 {
     private readonly ILibraryManager _libraryManager;
-    private readonly IHttpClientFactory _httpClientFactory;
+    private readonly ImdbFlatFileDownloader _downloader;
     private readonly ILogger<RefreshImdbRatingsTask> _logger;
     private readonly ILoggerFactory _loggerFactory;
-    private readonly string _dataPath;
 
     public RefreshImdbRatingsTask(
         ILibraryManager libraryManager,
-        IHttpClientFactory httpClientFactory,
+        ImdbFlatFileDownloader downloader,
         ILogger<RefreshImdbRatingsTask> logger,
-        ILoggerFactory loggerFactory,
-        MediaBrowser.Common.Configuration.IApplicationPaths applicationPaths)
+        ILoggerFactory loggerFactory)
     {
         _libraryManager = libraryManager;
-        _httpClientFactory = httpClientFactory;
+        _downloader = downloader;
         _logger = logger;
         _loggerFactory = loggerFactory;
-        _dataPath = applicationPaths.DataPath;
     }
 
     public string Name => "Refresh IMDb Ratings";
@@ -100,14 +97,10 @@ public class RefreshImdbRatingsTask : IScheduledTask
         progress.Report(5);
 
         // Step 2: Download/cache the ratings file, Step 3: Parse ratings (filtered to library IMDb IDs)
-        var downloader = new ImdbFlatFileDownloader(
-            _httpClientFactory,
-            _loggerFactory.CreateLogger<ImdbFlatFileDownloader>(),
-            _dataPath);
         var parser = new ImdbRatingsParser(_loggerFactory.CreateLogger<ImdbRatingsParser>());
 
         var ratings = await DownloadAndParseWithRetryAsync(
-            downloader,
+            _downloader,
             parser,
             libraryImdbIds,
             progress,
