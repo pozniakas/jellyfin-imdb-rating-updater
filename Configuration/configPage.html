@@ -46,51 +46,6 @@
                         </div>
                     </div>
 
-                    <div class="verticalSection">
-                        <h2 class="sectionTitle">IMDb Ratings Cache</h2>
-                        <div id="cacheStatusContainer" style="margin-bottom: 1em;">
-                            <p id="cacheStatus" style="margin: 0;">Loading cache status&hellip;</p>
-                        </div>
-                        <button id="btnDeleteCache" is="emby-button" type="button"
-                                class="raised button-cancel" disabled>
-                            <span>Delete Cache</span>
-                        </button>
-                        <div class="fieldDescription" style="margin-top: 1em;">
-                            Sourced from the
-                            <a href="https://datasets.imdbws.com/title.ratings.tsv.gz" target="_blank" rel="noopener noreferrer">IMDb ratings flat file</a>.
-                            Cached locally to disk with a 23-hour TTL and re-downloaded
-                            automatically when expired.
-                        </div>
-                        <div class="fieldDescription" style="margin-top: 1em;">
-                            Delete the cache to force a fresh download on the next task run.
-                        </div>
-                    </div>
-
-                    <div class="verticalSection">
-                        <h2 class="sectionTitle">Advanced</h2>
-                        <div class="checkboxContainer checkboxContainer-withDescription">
-                            <label>
-                                <input id="chkIncludeSeasonAverages" type="checkbox" is="emby-checkbox" />
-                                <span>Calculate Season Ratings</span>
-                            </label>
-                            <div class="fieldDescription checkboxFieldDescription">
-                                When enabled, each season's Community Rating is set to the average of eligible
-                                IMDb episode ratings in your library. Episodes without an IMDb rating or below
-                                the minimum votes threshold are excluded. Only has effect when "Include TV Series" is turned on.
-                            </div>
-                        </div>
-                        <div class="checkboxContainer checkboxContainer-withDescription">
-                            <label>
-                                <input id="chkEnableItemDebugLogging" type="checkbox" is="emby-checkbox" />
-                                <span>Enable Item Debug Logs</span>
-                            </label>
-                            <div class="fieldDescription checkboxFieldDescription">
-                                Off by default. When enabled, writes sampled per-item debug logs for troubleshooting
-                                missing IMDb rows and minimum-vote skips (can increase log volume and task duration).
-                            </div>
-                        </div>
-                    </div>
-
                     <div class="verticalSection" style="margin-top: 1em;">
                         <details>
                             <summary style="cursor: pointer; font-weight: 600;">How It Works</summary>
@@ -107,6 +62,54 @@
                             </p>
                         </details>
                     </div>
+
+                    <div class="verticalSection">
+                        <details>
+                            <summary style="cursor: pointer; font-weight: 600;">Advanced Settings</summary>
+                            <div style="margin-top: 1em;">
+                                <div class="checkboxContainer checkboxContainer-withDescription">
+                                    <label>
+                                        <input id="chkIncludeSeasonAverages" type="checkbox" is="emby-checkbox" />
+                                        <span>Calculate Season Ratings</span>
+                                    </label>
+                                    <div class="fieldDescription checkboxFieldDescription">
+                                        When enabled, each season's Community Rating is set to the average of eligible
+                                        IMDb episode ratings in your library. Episodes without an IMDb rating or below
+                                        the minimum votes threshold are excluded. Only has effect when "Include TV Series" is turned on.
+                                    </div>
+                                </div>
+                                <div class="checkboxContainer checkboxContainer-withDescription">
+                                    <label>
+                                        <input id="chkEnableItemDebugLogging" type="checkbox" is="emby-checkbox" />
+                                        <span>Enable Item Debug Logs</span>
+                                    </label>
+                                    <div class="fieldDescription checkboxFieldDescription">
+                                        Off by default. When enabled, writes sampled per-item debug logs for troubleshooting
+                                        missing IMDb rows and minimum-vote skips (can increase log volume and task duration).
+                                    </div>
+                                </div>
+
+                                <h2 class="sectionTitle" style="margin-top: 1.5em; font-size: 1.2em;">IMDb Ratings Cache</h2>
+                                <div id="cacheStatusContainer" style="margin-bottom: 1em;">
+                                    <p id="cacheStatus" style="margin: 0;">Loading cache status&hellip;</p>
+                                </div>
+                                <button id="btnDeleteCache" is="emby-button" type="button"
+                                        class="raised button-cancel" disabled>
+                                    <span>Delete Cache</span>
+                                </button>
+                                <div class="fieldDescription" style="margin-top: 1em;">
+                                    Sourced from the
+                                    <a href="https://datasets.imdbws.com/title.ratings.tsv.gz" target="_blank" rel="noopener noreferrer">IMDb ratings flat file</a>.
+                                    Cached locally to disk with a 23-hour TTL and re-downloaded
+                                    automatically when expired. Delete the cache to force a fresh download on the next task run.
+                                </div>
+                            </div>
+
+
+                        </details>
+                    </div>
+
+                    <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 1.5em 0;" />
 
                     <div>
                         <button id="btnSave" is="emby-button" type="submit" class="raised button-submit block">
